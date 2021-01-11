@@ -1,13 +1,12 @@
 package models
 
 import (
+	"encoding/json"
+	"log"
 	"net"
 
 	"github.com/astaxie/beego"
 	"github.com/gorilla/websocket"
-
-	"encoding/json"
-	"log"
 )
 
 // websocket 连接器
@@ -18,6 +17,7 @@ type Connection struct {
 	Send chan []byte
 }
 
+// json数据
 type toJson struct {
 	Data string `json:"data"`
 }

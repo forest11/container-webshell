@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/astaxie/beego"
+	"github.com/forest11/container-webshell/handler"
 	"github.com/forest11/container-webshell/models"
 	"github.com/gorilla/websocket"
 )
@@ -23,7 +24,11 @@ func (self *Wscontroller) Get() {
 	rows := self.Input().Get("rows")
 	cols := self.Input().Get("cols")
 
-	execid := models.Getexecid(host, port, containerid)
+	execid, err := handler.GetDockerExecId(host, port, containerid)
+	if err != nil {
+		beego.Error(err)
+	}
+
 	log.Println("execid is", execid)
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", host, port))
 	if err != nil {
@@ -40,7 +45,7 @@ func (self *Wscontroller) Get() {
 		log.Println(err)
 	}
 
-	models.Resizecontainer(host, port, execid, rows, cols)
+	handler.ResizeContainer(host, port, execid, rows, cols)
 	ws, err := upgrader.Upgrade(self.Ctx.ResponseWriter, self.Ctx.Request, nil)
 	c := &models.Connection{Ws: ws, Send: make(chan []byte, 256)}
 	go c.ConnHandle(conn)
