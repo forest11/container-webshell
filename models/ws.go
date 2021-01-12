@@ -2,10 +2,10 @@ package models
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net"
 
-	"github.com/astaxie/beego"
 	"github.com/gorilla/websocket"
 )
 
@@ -27,13 +27,6 @@ func (c *Connection) ConnHandle(conn net.Conn) {
 	for {
 		_, msg, err := c.Ws.ReadMessage()
 		if err != nil {
-			// 判断是不是超时
-			if netErr, ok := err.(net.Error); ok {
-				if netErr.Timeout() {
-					log.Printf("ReadMessage timeout remote: %v\n", conn.RemoteAddr())
-					return
-				}
-			}
 			log.Printf("ReadMessage remote:%v error: %v \n", conn.RemoteAddr(), err)
 			return
 		}
@@ -45,14 +38,17 @@ func (c *Connection) ConnHandle(conn net.Conn) {
 func (c *Connection) SendResp(conn net.Conn) {
 	for {
 		buf := make([]byte, 512)
-		conn.Read(buf)
+		_, err := conn.Read(buf)
+		if err == io.EOF { // 与docker断开连接, 需要关闭websocket连接
+			c.Ws.Close()
+			return
+		}
 		jData := toJson{Data: string(buf)}
 		data, _ := json.Marshal(jData)
-		err := c.Ws.WriteMessage(websocket.TextMessage, data)
+		err = c.Ws.WriteMessage(websocket.TextMessage, data)
 		if err != nil {
 			log.Printf("send msg faild:  %v\n", err)
 			return
 		}
-		beego.Info(string(buf))
 	}
 }

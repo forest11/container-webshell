@@ -34,7 +34,6 @@ func (self *Wscontroller) Get() {
 	if err != nil {
 		beego.Error(err)
 	}
-
 	defer conn.Close()
 
 	data := "{\"Tty\":true}"
@@ -42,12 +41,12 @@ func (self *Wscontroller) Get() {
 		execid, fmt.Sprintf("%s:%s", host, port), fmt.Sprint(len([]byte(data))), data)))
 
 	if err != nil {
-		log.Println(err)
+		beego.Error(err)
 	}
 
 	handler.ResizeContainer(host, port, execid, rows, cols)
 	ws, err := upgrader.Upgrade(self.Ctx.ResponseWriter, self.Ctx.Request, nil)
-	c := &models.Connection{Ws: ws, Send: make(chan []byte, 256)}
+	c := &models.Connection{Ws: ws, Send: make(chan []byte, 512)}
 	go c.ConnHandle(conn)
 	c.SendResp(conn)
 }
